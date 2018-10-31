@@ -78,7 +78,7 @@ public class Main {
             System.out.println("[+] Cannot add more work due to capacity restrictions!");
         }
 
-        doWork(worker, 5000);
+        doWork(worker, 1000);
     }
 
     public static void doWork(Worker w, long duration) {

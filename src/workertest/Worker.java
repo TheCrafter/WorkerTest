@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Worker<T extends Worker.Work> {
     public interface Work {
@@ -21,6 +22,8 @@ public class Worker<T extends Worker.Work> {
 
     private ExecutorService mWorkerExecutor;
     private AtomicBoolean mShouldWorkerStop;
+    private AtomicInteger mWorksStarted;
+    private AtomicInteger mWorksFinished;
 
     public enum State {
         INITIAL,
@@ -32,6 +35,8 @@ public class Worker<T extends Worker.Work> {
     public Worker() {
         mState = State.INITIAL;
         mShouldWorkerStop = new AtomicBoolean(false);
+        mWorksStarted = new AtomicInteger(0);
+        mWorksFinished = new AtomicInteger(0);
     }
 
     public void submit(T w) throws IllegalStateException {
@@ -46,18 +51,20 @@ public class Worker<T extends Worker.Work> {
         mWorkerExecutor = Executors.newSingleThreadExecutor();
         mWorkerExecutor.submit(() -> {
             while (!mShouldWorkerStop.get()) {
-                mExecutor.submit(() -> {
-                    System.out.println("[+] New thread started: " + Thread.currentThread().getName());
-                    try {
-                        Optional<T> t = Optional.ofNullable(mQueue.poll(1000, TimeUnit.MILLISECONDS));
-                        if (t.isPresent()) {
+                try {
+                    final Optional<T> t = Optional.ofNullable(mQueue.poll(1000, TimeUnit.MILLISECONDS));
+                    if (t.isPresent()) {
+                        mExecutor.submit(() -> {
+                            System.out.println("[+] New thread started: " + Thread.currentThread().getName());
+                            mWorksStarted.incrementAndGet();
                             t.get().work();
-                        }
-                        
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                            mWorksFinished.incrementAndGet();
+                        });
+                        System.out.println("[+] Submited work to mExecutor.");
                     }
-                });
+                } catch (InterruptedException e) {
+                    System.out.println("[!] Polling from queue interrupted.");
+                }
             }
             System.out.println("[+] Main Worker Thread stopped successfully!");
         });
@@ -66,10 +73,17 @@ public class Worker<T extends Worker.Work> {
     public void stop() {
         System.out.println("[+] Trying to stop worker.");
         mShouldWorkerStop.set(true);
-        mExecutor.shutdown();
-        mExecutor.shutdownNow();
         mWorkerExecutor.shutdownNow();
+        mExecutor.shutdown();
+        try {
+            mExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        mExecutor.shutdownNow();
         stateTransition(State.STOPPED);
+        System.out.println("Work completed: " + mWorksFinished.get() + "/" + mWorksStarted.get());
     }
 
     private void stateTransition(State newState) {
