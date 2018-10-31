@@ -18,7 +18,7 @@ public class HttpClient {
     }
     
     @FunctionalInterface
-    interface OnTempratureConverted {
+    public interface OnTempratureConverted {
         void temp(Optional<Double> d);
     }
     
@@ -81,13 +81,13 @@ public class HttpClient {
         }
     }
     
-    public void celsiusToFahrenheit(int c, OnTempratureConverted tempCb) {
+    public void celsiusToFahrenheit(double c, OnTempratureConverted tempCb) {
         String url = "https://www.w3schools.com/xml/tempconvert.asmx/CelsiusToFahrenheit";
         String body = "Celsius=" + c;
         convertTemprature(url, body, tempCb);
     }
     
-    public void fahrenheitToCelsius(int f, OnTempratureConverted tempCb) {
+    public void fahrenheitToCelsius(double f, OnTempratureConverted tempCb) {
         String url = "https://www.w3schools.com/xml/tempconvert.asmx/FahrenheitToCelsius";
         String body = "Fahrenheit=" + f;
         convertTemprature(url, body, tempCb);
