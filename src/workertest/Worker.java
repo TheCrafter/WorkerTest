@@ -25,6 +25,7 @@ public class Worker<T extends Worker.Work> {
     private AtomicBoolean mShouldWorkerStop;
     private AtomicInteger mWorksStarted;
     private AtomicInteger mWorksFinished;
+    private AtomicInteger mTotalWorkDone;
 
     public enum State {
         INITIAL,
@@ -38,6 +39,7 @@ public class Worker<T extends Worker.Work> {
         mShouldWorkerStop = new AtomicBoolean(false);
         mWorksStarted = new AtomicInteger(0);
         mWorksFinished = new AtomicInteger(0);
+        mTotalWorkDone = new AtomicInteger(0);
     }
 
     public void submit(T w) throws IllegalStateException {
@@ -97,6 +99,7 @@ public class Worker<T extends Worker.Work> {
             System.out.println("[+] Active threads: " + ((ThreadPoolExecutor) mExecutor).getActiveCount());
         }
 
+        mTotalWorkDone.set(mTotalWorkDone.get() + mWorksFinished.get());
         mWorksStarted.set(0);
         mWorksFinished.set(0);
     }
@@ -108,5 +111,9 @@ public class Worker<T extends Worker.Work> {
 
     public State getState() {
         return mState;
+    }
+
+    public int getTotalWorkDone() {
+        return mTotalWorkDone.get();
     }
 }
