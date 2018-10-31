@@ -41,7 +41,7 @@ public class Main {
             cb.httpCb(val, (Optional<Double> t) -> {
                 System.out.println(
                         t.isPresent() ?
-                        "[+] Convertion " + type.toString() + ": " + val + " --> " + t.get().toString() + " from " + Thread.currentThread().getName():
+                        "[+] Conversion " + type.toString() + ": " + val + " --> " + t.get().toString() + " from " + Thread.currentThread().getName():
                         "[-] No conversion Possible");
                 });
         }
