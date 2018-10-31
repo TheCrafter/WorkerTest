@@ -16,7 +16,7 @@ public class Worker<T extends Worker.Work> {
     private static int CAPACITY = 20;
     private static int WEB_CALL_THRESHOLD = 5;
 
-    public BlockingQueue<T> mQueue = new LinkedBlockingQueue<T>(CAPACITY);
+    private BlockingQueue<T> mQueue = new LinkedBlockingQueue<T>(CAPACITY);
     private ExecutorService mExecutor;
 
     private ExecutorService mWorkerExecutor;
@@ -39,7 +39,7 @@ public class Worker<T extends Worker.Work> {
     }
 
     public void start() {
-        mState = State.OPERETIONAL;
+        stateTransition(State.OPERETIONAL);
         mShouldWorkerStop.set(false);
 
         mExecutor = Executors.newFixedThreadPool(WEB_CALL_THRESHOLD);
@@ -47,6 +47,7 @@ public class Worker<T extends Worker.Work> {
         mWorkerExecutor.submit(() -> {
             while (!mShouldWorkerStop.get()) {
                 mExecutor.submit(() -> {
+                    System.out.println("[+] New thread started: " + Thread.currentThread().getName());
                     try {
                         Optional<T> t = Optional.ofNullable(mQueue.poll(1000, TimeUnit.MILLISECONDS));
                         if (t.isPresent()) {
@@ -58,16 +59,22 @@ public class Worker<T extends Worker.Work> {
                     }
                 });
             }
-            System.out.println("Yay. I stopped!");
+            System.out.println("[+] Main Worker Thread stopped successfully!");
         });
     }
 
     public void stop() {
-        mState = State.STOPPED;
+        System.out.println("[+] Trying to stop worker.");
         mShouldWorkerStop.set(true);
         mExecutor.shutdown();
         mExecutor.shutdownNow();
         mWorkerExecutor.shutdownNow();
+        stateTransition(State.STOPPED);
+    }
+
+    private void stateTransition(State newState) {
+        System.out.println("[~] " + mState.toString() + " -> " + newState.toString());
+        mState = newState;
     }
 
     public State getState() {

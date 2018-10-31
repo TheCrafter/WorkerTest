@@ -39,7 +39,7 @@ public class Main {
             cb.httpCb(val, (Optional<Double> t) -> {
                 System.out.println(
                         t.isPresent() ?
-                        "[+] Convertion " + type.toString() + ": " + val + " --> " + t.get().toString() :
+                        "[+] Convertion " + type.toString() + ": " + val + " --> " + t.get().toString() + " from " + Thread.currentThread().getName():
                         "[-] No conversion Possible");
                 });
         }
@@ -78,15 +78,16 @@ public class Main {
             System.out.println("[+] Cannot add more work due to capacity restrictions!");
         }
 
-        worker.start();
+        doWork(worker, 5000);
+    }
+
+    public static void doWork(Worker w, long duration) {
+        w.start();
         try {
-            Thread.sleep(20000);
+            Thread.sleep(duration);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        System.out.println("Stopping...");
-        worker.stop();
-        System.out.println("Stopped!");
+        w.stop();
     }
 }
