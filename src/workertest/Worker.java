@@ -51,19 +51,28 @@ public class Worker<T extends Worker.Work> {
         mWorkerExecutor = Executors.newSingleThreadExecutor();
         mWorkerExecutor.submit(() -> {
             while (!mShouldWorkerStop.get()) {
+                // FixedThreadPool indeed has a threshold of its own but it allows work to be submitted even when the threshold is reached.
+                // Extra work will remain in a queue until there is an opening.
+                // This is a workaround to not allow extra threads to be submitted to our executor.
+                // Without this, all items from mQueue will be immediately submitted. This may be okay in the real world but it doesn't help in showcasing
+                // this exercise's results :)
+                if (mWorksStarted.get() - mWorksFinished.get() >= WEB_CALL_THRESHOLD) {
+                    continue;
+                }
+
                 try {
                     final Optional<T> t = Optional.ofNullable(mQueue.poll(1000, TimeUnit.MILLISECONDS));
                     if (t.isPresent()) {
+                        mWorksStarted.incrementAndGet();
                         mExecutor.submit(() -> {
                             System.out.println("[+] New thread started: " + Thread.currentThread().getName());
-                            mWorksStarted.incrementAndGet();
                             t.get().work();
                             mWorksFinished.incrementAndGet();
                         });
                         System.out.println("[+] Submited work to mExecutor.");
                     }
                 } catch (InterruptedException e) {
-                    System.out.println("[!] Polling from queue interrupted.");
+                    System.out.println("[!] Polling from queue interrupted. Size is: " + mQueue.size());
                 }
             }
             System.out.println("[+] Main Worker Thread stopped successfully!");
@@ -83,7 +92,9 @@ public class Worker<T extends Worker.Work> {
         }
         mExecutor.shutdownNow();
         stateTransition(State.STOPPED);
-        System.out.println("Work completed: " + mWorksFinished.get() + "/" + mWorksStarted.get());
+        System.out.println("[+] Work completed: " + mWorksFinished.get() + "/" + mWorksStarted.get());
+        mWorksStarted.set(0);
+        mWorksFinished.set(0);
     }
 
     private void stateTransition(State newState) {

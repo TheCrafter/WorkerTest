@@ -78,10 +78,17 @@ public class Main {
             System.out.println("[+] Cannot add more work due to capacity restrictions!");
         }
 
-        doWork(worker, 1000);
+        doWork(worker, 100);
+        doWork(worker, 100);
+        doWork(worker, 100);
+        doWork(worker, 100);
+        System.out.println("No more work here probably.");
+        doWork(worker, 100);
     }
 
     public static void doWork(Worker w, long duration) {
+        // Note that we need even a slight delay before stopping the worker.
+        // Without that delay the worker won't even have enough time to spawn any threads.
         w.start();
         try {
             Thread.sleep(duration);
