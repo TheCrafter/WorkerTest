@@ -15,14 +15,19 @@ public class Worker<T extends Worker.Work> {
         void work();
     }
 
+    // Config
     private static int CAPACITY = 20;
     private static int WEB_CALL_THRESHOLD = 5;
 
+    // Executor to submit work
     private BlockingQueue<T> mQueue = new LinkedBlockingQueue<T>(CAPACITY);
     private ExecutorService mExecutor;
 
+    // Single thread executor for worker's operating thread
     private ExecutorService mWorkerExecutor;
     private AtomicBoolean mShouldWorkerStop;
+
+    // Thread safe counters
     private AtomicInteger mWorksStarted;
     private AtomicInteger mWorksFinished;
     private AtomicInteger mTotalWorkDone;
