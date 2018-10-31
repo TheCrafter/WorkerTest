@@ -5,6 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +70,6 @@ public class Worker<T extends Worker.Work> {
                             t.get().work();
                             mWorksFinished.incrementAndGet();
                         });
-                        System.out.println("[+] Submited work to mExecutor.");
                     }
                 } catch (InterruptedException e) {
                     System.out.println("[!] Polling from queue interrupted. Size is: " + mQueue.size());
@@ -93,6 +93,10 @@ public class Worker<T extends Worker.Work> {
         mExecutor.shutdownNow();
         stateTransition(State.STOPPED);
         System.out.println("[+] Work completed: " + mWorksFinished.get() + "/" + mWorksStarted.get());
+        if (mExecutor instanceof ThreadPoolExecutor) {
+            System.out.println("[+] Active threads: " + ((ThreadPoolExecutor) mExecutor).getActiveCount());
+        }
+
         mWorksStarted.set(0);
         mWorksFinished.set(0);
     }

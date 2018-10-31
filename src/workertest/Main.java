@@ -1,5 +1,6 @@
 package workertest;
 
+import java.util.Date;
 import java.util.Optional;
 
 import workertest.HttpClient.OnTempratureConverted;
@@ -68,6 +69,9 @@ public class Main {
             worker.submit(new HttpWork(Type.C2F, 18.0));
             worker.submit(new HttpWork(Type.C2F, 19.0));
             worker.submit(new HttpWork(Type.C2F, 20.0));
+
+            // Compile error if generic constraint is not satisfied
+            //worker.submit(new SomeOtherWork());
         } catch (IllegalStateException e) {
             System.out.println("[!] Shouldn't have a problem here: " + e.toString());
         }
@@ -82,19 +86,27 @@ public class Main {
         doWork(worker, 100);
         doWork(worker, 100);
         doWork(worker, 100);
-        System.out.println("No more work here probably.");
+        System.out.println("------------");
+        System.out.println("[+] No more work here probably.");
         doWork(worker, 100);
     }
 
     public static void doWork(Worker w, long duration) {
         // Note that we need even a slight delay before stopping the worker.
         // Without that delay the worker won't even have enough time to spawn any threads.
+        Long started = new Date().getTime();
+        System.out.println("[+] Worker started at: " + started);
         w.start();
         try {
             Thread.sleep(duration);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        // Prove start() is non blocking and stop() is blocking.
+        // Note that first call to start() should take 0.1 sec longer because Executor stuff are being initialized behind the scenes for the first time.
+        System.out.println("[+] Sleep ended after: " + (new Date().getTime() - started) + " msec. Sleep duration was " + duration + " msec.");
         w.stop();
+        System.out.println("[+] Worker ended after: " + (new Date().getTime() - started) + " msec. Sleep duration was " + duration + " msec.");
     }
 }
